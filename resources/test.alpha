@@ -1,5 +1,41 @@
-print "one"; // expected: one
-print true; // expected: true
-print 2 + 1; // expected: 3
-print 1 + 2 / (1 + 1) + 3; // expected: 5
-print nil; // expected: nil
+// print "one"; // expected: one
+// print true; // expected: true
+// print 2 + 1; // expected: 3
+// print 1 + 2 / (1 + 1) + 3; // expected: 5
+// print nil; // expected: nil
+
+var noValue;
+var numberOne = 1;
+var numberOneStr = "1";
+var booleanTrue = true;
+var booleanFalse = false;
+var nullValue = nil;
+var expression = 1 + 2 / (1 + 1) + 3;
+
+print noValue;
+print numberOne;
+print numberOneStr;
+print booleanTrue;
+print booleanFalse;
+print nullValue;
+print expression;
+
+var a = "global a";
+var b = "global b";
+var c = "global c";
+{
+  var a = "outer a";
+  var b = "outer b";
+  {
+    var a = "inner a";
+    print a;
+    print b;
+    print c;
+  }
+  print a;
+  print b;
+  print c;
+}
+print a;
+print b;
+print c;

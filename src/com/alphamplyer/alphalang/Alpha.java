@@ -26,7 +26,7 @@ public class Alpha {
 
     private static void runFile(String path) throws IOException {
         byte[] bytes = Files.readAllBytes(Paths.get(path));
-        run(new String(bytes, Charset.defaultCharset()));
+        run(new String(bytes, Charset.defaultCharset()), false);
 
         // Indicate an error in the exit code.
         if (hadError) System.exit(65);
@@ -38,23 +38,33 @@ public class Alpha {
         BufferedReader reader = new BufferedReader(input);
 
         for (;;) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             System.out.print("> ");
-            String line = reader.readLine();
-            if (line == null) break;
-            run(line);
+            String promptLine = reader.readLine();
+            if (promptLine == null) break;
+            run(promptLine, !promptLine.trim().endsWith(";"));
             hadError = false;
         }
     }
 
-    private static void run(String source) {
+    private static void run(String source, boolean isExpr) {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
         Parser parser = new Parser(tokens);
+
+        if (isExpr) {
+            Expr expr = parser.parseExpr();
+            if (hadError) return;
+            interpreter.interpretExpr(expr);
+            return;
+        }
+
         List<Stmt> statements = parser.parse();
-
-        // Stop if there was a syntax error.
         if (hadError) return;
-
         interpreter.interpret(statements);
     }
 
@@ -71,7 +81,7 @@ public class Alpha {
     }
 
     static void runtimeError(RuntimeError error) {
-        System.err.println(error.getMessage() + "\n[line " + error.token.line + "]");
+        System.err.println("[line " + error.token.line + "] " + error.getMessage());
         hadRuntimeError = true;
     }
 
