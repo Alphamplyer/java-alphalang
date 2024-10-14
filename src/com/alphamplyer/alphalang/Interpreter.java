@@ -1,13 +1,41 @@
 package com.alphamplyer.alphalang;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Interpreter implements Stmt.Visitor<Object>, Expr.Visitor<Object> {
-    private Environment environment = new Environment();
+    final Environment globals = new Environment();
+    private Environment environment = globals;
+
+    public Interpreter() {
+        globals.define("clock", new AlphaCallable() {
+            @Override
+            public int arity() {
+                return 0;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                return (double) System.currentTimeMillis() / 1000.0;
+            }
+
+            @Override
+            public String toString() {
+                return "<native fn>";
+            }
+        });
+    }
 
     @Override
     public Object visitExpressionStmt(Stmt.Expression stmt) {
         evaluate(stmt.expression);
+        return null;
+    }
+
+    @Override
+    public Object visitFunctionStmt(Stmt.Function stmt) {
+        AlphaFunction function = new AlphaFunction(stmt, environment);
+        environment.define(stmt.name.lexeme, function);
         return null;
     }
 
@@ -26,6 +54,15 @@ public class Interpreter implements Stmt.Visitor<Object>, Expr.Visitor<Object> {
         Object value = evaluate(stmt.expression);
         System.out.println(stringify(value));
         return null;
+    }
+
+    @Override
+    public Object visitReturnStmt(Stmt.Return stmt) {
+        Object value = null;
+        if (stmt.value != null) {
+            value = evaluate(stmt.value);
+        }
+        throw new Return(value);
     }
 
     @Override
@@ -101,6 +138,29 @@ public class Interpreter implements Stmt.Visitor<Object>, Expr.Visitor<Object> {
     }
 
     @Override
+    public Object visitCallExpr(Expr.Call expr) {
+        Object callee = evaluate(expr.callee);
+
+        List<Object> arguments = new ArrayList<>();
+        for (Expr arg : expr.arguments) {
+            arguments.add(evaluate(arg));
+        }
+
+        if (!(callee instanceof AlphaCallable)) {
+            throw new RuntimeError(expr.parenthesis, "Can only call functions and classes.");
+        }
+
+        AlphaCallable function = (AlphaCallable)callee;
+        if (arguments.size() != function.arity()) {
+            throw new RuntimeError(expr.parenthesis, "Expected " +
+                function.arity() + " arguments but got " +
+                arguments.size() + ".");
+        }
+
+        return function.call(this, arguments);
+    }
+
+    @Override
     public Object visitGroupingExpr(Expr.Grouping expr) {
         return evaluate(expr.expression);
     }
@@ -162,7 +222,7 @@ public class Interpreter implements Stmt.Visitor<Object>, Expr.Visitor<Object> {
         }
     }
 
-    private void executeBlock(List<Stmt> statements, Environment environment) {
+    void executeBlock(List<Stmt> statements, Environment environment) {
         Environment previous = this.environment;
         try {
             this.environment = environment;
