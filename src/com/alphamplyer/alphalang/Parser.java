@@ -1,6 +1,7 @@
 package com.alphamplyer.alphalang;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.alphamplyer.alphalang.TokenType.*;
@@ -57,6 +58,7 @@ public class Parser {
     private Stmt statement() {
         if (match(IF)) return ifStatement();
         if (match(WHILE)) return whileStatement();
+        if (match(FOR)) return forStatement();
         if (match(PRINT)) return printStatement();
         if (match(LEFT_CURLY_BRACE)) return new Stmt.Block(block());
         return expressionStatement();
@@ -88,6 +90,50 @@ public class Parser {
         consume(RIGHT_PARENTHESES, "Expect ')' after while's condition");
         Stmt thenBranch = statement();
         return new Stmt.While(condition, thenBranch);
+    }
+
+    private Stmt forStatement() {
+        consume(LEFT_PARENTHESES, "Expect '(' after for");
+
+        Stmt initializerStmt;
+        if (match(SEMICOLON))
+            initializerStmt = null;
+        if (match(VAR))
+            initializerStmt = varDeclaration();
+        else
+            initializerStmt = expressionStatement();
+
+        Expr conditionExpr = null;
+        if (!check(SEMICOLON))
+            conditionExpr = expression();
+        consume(SEMICOLON, "Expect ';' after loop condition");
+
+        Expr incrementExpr = null;
+        if (!check(RIGHT_PARENTHESES))
+            incrementExpr = expression();
+        consume(RIGHT_PARENTHESES, "Expect ')' after clauses");
+
+        Stmt body = statement();
+
+        if (incrementExpr != null)
+            body = new Stmt.Block(
+                Arrays.asList(
+                    body,
+                    new Stmt.Expression(incrementExpr)
+                )
+            );
+
+        if (conditionExpr == null)
+            conditionExpr = new Expr.Literal(true);
+        body = new Stmt.While(conditionExpr, body);
+
+        if (initializerStmt != null)
+            body = new Stmt.Block(Arrays.asList(
+                initializerStmt,
+                body
+            ));
+
+        return body;
     }
 
     private List<Stmt> block() {
