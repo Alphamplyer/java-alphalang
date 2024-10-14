@@ -44,6 +44,14 @@ public class Interpreter implements Stmt.Visitor<Object>, Expr.Visitor<Object> {
     }
 
     @Override
+    public Object visitWhileStmt(Stmt.While stmt) {
+        while (isTruthy(evaluate(stmt.condition))) {
+            execute(stmt.body);
+        }
+        return null;
+    }
+
+    @Override
     public Object visitAssignExpr(Expr.Assign expr) {
         Object value = evaluate(expr.value);
         environment.assign(expr.name, value);

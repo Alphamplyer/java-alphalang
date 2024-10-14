@@ -56,6 +56,7 @@ public class Parser {
 
     private Stmt statement() {
         if (match(IF)) return ifStatement();
+        if (match(WHILE)) return whileStatement();
         if (match(PRINT)) return printStatement();
         if (match(LEFT_CURLY_BRACE)) return new Stmt.Block(block());
         return expressionStatement();
@@ -79,6 +80,14 @@ public class Parser {
         Expr value = expression();
         consume(SEMICOLON, "Expected ';' after value");
         return new Stmt.Print(value);
+    }
+
+    private Stmt whileStatement() {
+        consume(LEFT_PARENTHESES, "Expect '(' after while");
+        Expr condition = expression();
+        consume(RIGHT_PARENTHESES, "Expect ')' after while's condition");
+        Stmt thenBranch = statement();
+        return new Stmt.While(condition, thenBranch);
     }
 
     private List<Stmt> block() {
