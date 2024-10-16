@@ -17,8 +17,8 @@ Training to understand how things works and maybe :
 - [x] Variable declaration
 - [x] Variable assignment
 - [x] Scoping
-- [ ] Control flow (if, for, while, ...)
-- [ ] Functions
+- [x] Control flow (if, for, while, ...)
+- [x] Functions
 - [ ] Classes
 - [ ] Inheritance
 - [ ] Java is slow, rewriting in c:
