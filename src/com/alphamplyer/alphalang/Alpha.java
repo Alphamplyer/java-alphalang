@@ -45,7 +45,8 @@ public class Alpha {
             }
             System.out.print("> ");
             String promptLine = reader.readLine();
-            if (promptLine == null) break;
+            if (promptLine == null)
+                break;
             run(promptLine, !promptLine.trim().endsWith(";"));
             hadError = false;
         }
@@ -55,16 +56,25 @@ public class Alpha {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
         Parser parser = new Parser(tokens);
+        Resolver resolver = new Resolver(interpreter);
 
         if (isExpr) {
             Expr expr = parser.parseExpr();
-            if (hadError) return;
+            if (hadError)
+                return;
+
             interpreter.interpretExpr(expr);
             return;
         }
 
         List<Stmt> statements = parser.parse();
-        if (hadError) return;
+        if (hadError)
+            return;
+
+        resolver.resolve(statements);
+        if (hadError)
+            return;
+
         interpreter.interpret(statements);
     }
 
