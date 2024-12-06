@@ -5,10 +5,18 @@ import java.util.List;
 public class AlphaFunction implements AlphaCallable {
     private final Stmt.Function declaration;
     private final Environment closure;
+    private final boolean isInitializer;
 
-    public AlphaFunction(Stmt.Function declaration, Environment closure) {
+    public AlphaFunction(Stmt.Function declaration, Environment closure, boolean isInitializer) {
         this.declaration = declaration;
         this.closure = closure;
+        this.isInitializer = isInitializer;
+    }
+
+    AlphaFunction bind(AlphaInstance instance) {
+        Environment environment = new Environment(closure);
+        environment.define("this", instance);
+        return new AlphaFunction(declaration, environment, isInitializer);
     }
 
     @Override
@@ -25,8 +33,11 @@ public class AlphaFunction implements AlphaCallable {
         try {
             interpreter.executeBlock(declaration.body, environment);
         } catch (Return returnValue) {
+            if (isInitializer) return closure.getAt(0, "this");
             return returnValue.value;
         }
+
+        if (isInitializer) return closure.getAt(0, "this");
         return null;
     }
 

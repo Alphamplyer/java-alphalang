@@ -19,7 +19,7 @@ Training to understand how things works and maybe :
 - [x] Scoping
 - [x] Control flow (if, for, while, ...)
 - [x] Functions
-- [ ] Classes
+- [x] Classes
 - [ ] Inheritance
 - [ ] Java is slow, rewriting in c:
   - [ ] change frontend (Parser -> Compiler) 

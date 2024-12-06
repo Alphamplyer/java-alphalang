@@ -1,10 +1,12 @@
-var a = "global";
-{
-  func showA() {
-    print a;
+class Foo {
+  init() {
+    print this;
   }
 
-  showA();
-  var a = "block";
-  showA();
+  sayHello() {
+    print "Hello";
+  }
 }
+
+var foo = Foo();
+foo.sayHello();

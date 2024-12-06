@@ -35,6 +35,8 @@ public class Parser {
 
     private Stmt declaration() {
         try {
+            if (match(CLASS))
+                return classDeclaration();
             if (match(FUNC))
                 return function("function");
             if (match(VAR))
@@ -44,6 +46,19 @@ public class Parser {
             synchronize();
             return null;
         }
+    }
+
+    private Stmt.Class classDeclaration() {
+        Token name = consume(IDENTIFIER, "Expect class name");
+        consume(LEFT_CURLY_BRACE, "Expect '{' before class body");
+
+        List<Stmt.Function> functions = new ArrayList<>();
+        while (!check(RIGHT_CURLY_BRACE) && !isAtEnd()) {
+            functions.add(function("function"));
+        }
+
+        consume(RIGHT_CURLY_BRACE, "Expect '}' after the class body");
+        return new Stmt.Class(name, functions);
     }
 
     private Stmt.Function function(String kind) {
@@ -202,6 +217,9 @@ public class Parser {
             if (expr instanceof Expr.Variable) {
                 Token name = ((Expr.Variable)expr).name;
                 return new Expr.Assign(name, value);
+            } else if (expr instanceof Expr.Get) {
+                Expr.Get get = (Expr.Get)expr;
+                return new Expr.Set(get.object, get.name, value);
             }
 
             error(equals, "Invalid assignment target.");
@@ -330,11 +348,13 @@ public class Parser {
         while (true) {
             if (match(LEFT_PARENTHESES)) {
                 expr = finishCall(expr);
+            } else if (match(DOT)) {
+                Token name = consume(IDENTIFIER, "Expect property name after '.'.");
+                expr = new Expr.Get(expr, name);
             } else {
                 break;
             }
         }
-
 
         return expr;
     }
@@ -364,6 +384,8 @@ public class Parser {
 
         if (match(NUMBER, STRING))
             return new Expr.Literal(previous().literal);
+
+        if (match(THIS)) return new Expr.This(previous());
 
         if (match(IDENTIFIER)) {
             return new Expr.Variable(previous());
