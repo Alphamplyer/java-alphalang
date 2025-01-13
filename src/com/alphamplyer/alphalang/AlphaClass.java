@@ -5,16 +5,22 @@ import java.util.Map;
 
 public class AlphaClass implements AlphaCallable {
     final String name;
+    final AlphaClass superclass;
     private final Map<String, AlphaFunction> methods;
 
-    AlphaClass(String name, Map<String, AlphaFunction> methods) {
+    AlphaClass(String name, AlphaClass superclass, Map<String, AlphaFunction> methods) {
         this.name = name;
+        this.superclass = superclass;
         this.methods = methods;
     }
 
     AlphaFunction findMethod(String name) {
         if (methods.containsKey(name)) {
             return methods.get(name);
+        }
+
+        if (superclass != null) {
+            return superclass.findMethod(name);
         }
 
         return null;

@@ -76,7 +76,20 @@ public class Interpreter implements Stmt.Visitor<Object>, Expr.Visitor<Object> {
 
     @Override
     public Object visitClassStmt(Stmt.Class stmt) {
+        Object superclass = null;
+        if (stmt.superclass != null) {
+            superclass = evaluate(stmt.superclass);
+            if (!(superclass instanceof AlphaClass)) {
+                throw new RuntimeError(stmt.superclass.name,"Superclass must be a class.");
+            }
+        }
+
         environment.define(stmt.name.lexeme, null);
+
+        if (stmt.superclass != null) {
+            environment = new Environment(environment);
+            environment.define("super", superclass);
+        }
 
         Map<String, AlphaFunction> methods = new HashMap<>();
         for (Stmt.Function method : stmt.methods) {
@@ -84,7 +97,12 @@ public class Interpreter implements Stmt.Visitor<Object>, Expr.Visitor<Object> {
             methods.put(method.name.lexeme, function);
         }
 
-        AlphaClass alphaClass = new AlphaClass(stmt.name.lexeme, methods);
+        AlphaClass alphaClass = new AlphaClass(stmt.name.lexeme, (AlphaClass)superclass, methods);
+
+        if (superclass != null) {
+            environment = environment.enclosing;
+        }
+
         environment.assign(stmt.name, alphaClass);
         return null;
     }
@@ -227,6 +245,20 @@ public class Interpreter implements Stmt.Visitor<Object>, Expr.Visitor<Object> {
         Object value = evaluate(expr.value);
         ((AlphaInstance)object).set(expr.name, value);
         return value;
+    }
+
+    @Override
+    public Object visitSuperExpr(Expr.Super expr) {
+        int distance = locals.get(expr);
+        AlphaClass superclass = (AlphaClass) environment.getAt(distance, "super");
+        AlphaInstance object = (AlphaInstance)environment.getAt(distance - 1, "this");
+        AlphaFunction method = superclass.findMethod(expr.method.lexeme);
+
+        if (method == null) {
+            throw new RuntimeError(expr.method, "Undefined property '" + expr.method.lexeme + "'.");
+        }
+
+        return method.bind(object);
     }
 
     @Override
